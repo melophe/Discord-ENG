@@ -1,0 +1,13 @@
+discord:
+  token: "your-discord-bot-token"
+  channel_id: "your-channel-id"
+
+claude:
+  api_key: "your-anthropic-api-key"
+  model: "claude-sonnet-4-20250514"
+
+schedule:
+  interval_minutes: 60
+
+database:
+  path: "./english_quiz.db"
