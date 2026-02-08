@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/joho/godotenv"
 	"github.com/melophe/Discord-ENG/internal/bot"
 	"github.com/melophe/Discord-ENG/internal/claude"
 	"github.com/melophe/Discord-ENG/internal/config"
@@ -13,10 +14,21 @@ import (
 )
 
 func main() {
-	// Load configuration
-	cfg, err := config.Load("config.yaml")
-	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+	// Load .env file if exists
+	godotenv.Load()
+
+	// Load configuration from environment variables
+	cfg := config.Load()
+
+	// Validate required config
+	if cfg.Discord.Token == "" {
+		log.Fatal("DISCORD_TOKEN is required")
+	}
+	if cfg.Discord.ChannelID == "" {
+		log.Fatal("DISCORD_CHANNEL_ID is required")
+	}
+	if cfg.Claude.APIKey == "" {
+		log.Fatal("CLAUDE_API_KEY is required")
 	}
 
 	// Initialize database

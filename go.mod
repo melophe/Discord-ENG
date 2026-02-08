@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/anthropics/anthropic-sdk-go v1.21.0
 	github.com/bwmarrin/discordgo v0.29.0
-	gopkg.in/yaml.v3 v3.0.1
+	github.com/joho/godotenv v1.5.1
 	modernc.org/sqlite v1.44.3
 )
 
