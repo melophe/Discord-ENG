@@ -6,40 +6,24 @@ import (
 )
 
 func TestLoad(t *testing.T) {
-	// Create a temporary config file
-	content := `
-discord:
-  token: "test-token"
-  channel_id: "123456789"
+	// Set environment variables
+	os.Setenv("DISCORD_TOKEN", "test-token")
+	os.Setenv("DISCORD_CHANNEL_ID", "123456789")
+	os.Setenv("CLAUDE_API_KEY", "test-api-key")
+	os.Setenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")
+	os.Setenv("SCHEDULE_INTERVAL", "30")
+	os.Setenv("DATABASE_PATH", "./test.db")
+	defer func() {
+		os.Unsetenv("DISCORD_TOKEN")
+		os.Unsetenv("DISCORD_CHANNEL_ID")
+		os.Unsetenv("CLAUDE_API_KEY")
+		os.Unsetenv("CLAUDE_MODEL")
+		os.Unsetenv("SCHEDULE_INTERVAL")
+		os.Unsetenv("DATABASE_PATH")
+	}()
 
-claude:
-  api_key: "test-api-key"
-  model: "claude-sonnet-4-20250514"
+	cfg := Load()
 
-schedule:
-  interval_minutes: 30
-
-database:
-  path: "./test.db"
-`
-	tmpFile, err := os.CreateTemp("", "config-*.yaml")
-	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
-	}
-	defer os.Remove(tmpFile.Name())
-
-	if _, err := tmpFile.WriteString(content); err != nil {
-		t.Fatalf("Failed to write temp file: %v", err)
-	}
-	tmpFile.Close()
-
-	// Test loading
-	cfg, err := Load(tmpFile.Name())
-	if err != nil {
-		t.Fatalf("Failed to load config: %v", err)
-	}
-
-	// Verify values
 	if cfg.Discord.Token != "test-token" {
 		t.Errorf("Expected token 'test-token', got '%s'", cfg.Discord.Token)
 	}
@@ -60,28 +44,37 @@ database:
 	}
 }
 
-func TestLoad_FileNotFound(t *testing.T) {
-	_, err := Load("nonexistent.yaml")
-	if err == nil {
-		t.Error("Expected error for nonexistent file, got nil")
+func TestLoad_Defaults(t *testing.T) {
+	// Clear all env vars
+	os.Unsetenv("DISCORD_TOKEN")
+	os.Unsetenv("DISCORD_CHANNEL_ID")
+	os.Unsetenv("CLAUDE_API_KEY")
+	os.Unsetenv("CLAUDE_MODEL")
+	os.Unsetenv("SCHEDULE_INTERVAL")
+	os.Unsetenv("DATABASE_PATH")
+
+	cfg := Load()
+
+	// Check defaults
+	if cfg.Claude.Model != "claude-sonnet-4-20250514" {
+		t.Errorf("Expected default model 'claude-sonnet-4-20250514', got '%s'", cfg.Claude.Model)
+	}
+	if cfg.Schedule.IntervalMinutes != 60 {
+		t.Errorf("Expected default interval 60, got %d", cfg.Schedule.IntervalMinutes)
+	}
+	if cfg.Database.Path != "./english_quiz.db" {
+		t.Errorf("Expected default path './english_quiz.db', got '%s'", cfg.Database.Path)
 	}
 }
 
-func TestLoad_InvalidYAML(t *testing.T) {
-	tmpFile, err := os.CreateTemp("", "config-*.yaml")
-	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
-	}
-	defer os.Remove(tmpFile.Name())
+func TestLoad_InvalidInterval(t *testing.T) {
+	os.Setenv("SCHEDULE_INTERVAL", "invalid")
+	defer os.Unsetenv("SCHEDULE_INTERVAL")
 
-	// Write invalid YAML
-	if _, err := tmpFile.WriteString("invalid: yaml: content: [}"); err != nil {
-		t.Fatalf("Failed to write temp file: %v", err)
-	}
-	tmpFile.Close()
+	cfg := Load()
 
-	_, err = Load(tmpFile.Name())
-	if err == nil {
-		t.Error("Expected error for invalid YAML, got nil")
+	// Should use default when invalid
+	if cfg.Schedule.IntervalMinutes != 60 {
+		t.Errorf("Expected default interval 60 for invalid input, got %d", cfg.Schedule.IntervalMinutes)
 	}
 }

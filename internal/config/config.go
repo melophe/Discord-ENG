@@ -2,46 +2,67 @@ package config
 
 import (
 	"os"
-
-	"gopkg.in/yaml.v3"
+	"strconv"
 )
 
 type Config struct {
-	Discord  DiscordConfig  `yaml:"discord"`
-	Claude   ClaudeConfig   `yaml:"claude"`
-	Schedule ScheduleConfig `yaml:"schedule"`
-	Database DatabaseConfig `yaml:"database"`
+	Discord  DiscordConfig
+	Claude   ClaudeConfig
+	Schedule ScheduleConfig
+	Database DatabaseConfig
 }
 
 type DiscordConfig struct {
-	Token     string `yaml:"token"`
-	ChannelID string `yaml:"channel_id"`
+	Token     string
+	ChannelID string
 }
 
 type ClaudeConfig struct {
-	APIKey string `yaml:"api_key"`
-	Model  string `yaml:"model"`
+	APIKey string
+	Model  string
 }
 
 type ScheduleConfig struct {
-	IntervalMinutes int `yaml:"interval_minutes"`
+	IntervalMinutes int
 }
 
 type DatabaseConfig struct {
-	Path string `yaml:"path"`
+	Path string
 }
 
-// Load reads the config file and returns a Config struct
-func Load(path string) (*Config, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
+// Load reads configuration from environment variables
+func Load() *Config {
+	interval := 60
+	if v := os.Getenv("SCHEDULE_INTERVAL"); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil {
+			interval = parsed
+		}
 	}
 
-	var cfg Config
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, err
+	dbPath := os.Getenv("DATABASE_PATH")
+	if dbPath == "" {
+		dbPath = "./english_quiz.db"
 	}
 
-	return &cfg, nil
+	model := os.Getenv("CLAUDE_MODEL")
+	if model == "" {
+		model = "claude-sonnet-4-20250514"
+	}
+
+	return &Config{
+		Discord: DiscordConfig{
+			Token:     os.Getenv("DISCORD_TOKEN"),
+			ChannelID: os.Getenv("DISCORD_CHANNEL_ID"),
+		},
+		Claude: ClaudeConfig{
+			APIKey: os.Getenv("CLAUDE_API_KEY"),
+			Model:  model,
+		},
+		Schedule: ScheduleConfig{
+			IntervalMinutes: interval,
+		},
+		Database: DatabaseConfig{
+			Path: dbPath,
+		},
+	}
 }
