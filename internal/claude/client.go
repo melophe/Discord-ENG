@@ -10,7 +10,7 @@ import (
 
 type Client struct {
 	client *anthropic.Client
-	model  string
+	model  anthropic.Model
 }
 
 // NewClient creates a new Claude API client
@@ -18,7 +18,7 @@ func NewClient(apiKey, model string) *Client {
 	client := anthropic.NewClient(option.WithAPIKey(apiKey))
 	return &Client{
 		client: &client,
-		model:  model,
+		model:  anthropic.Model(model),
 	}
 }
 
